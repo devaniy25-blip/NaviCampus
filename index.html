@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NaviCampus - ITNL</title>
+    
+    <!-- Estilos de Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        /* Número sólido en negro sin efectos borrosos ni sombras */
+        .label-edificio {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000000;
+            text-shadow: none !important;
+        }
+        /* Panel flotante de instrucciones */
+        .nav-panel {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 280px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <!-- Script de Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 1. Polígonos de tu GeoJSON con colores sólidos y números limpios
+        var campusGeoJSON = {
+          "type": "FeatureCollection",
+          "features": [
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.243282, 25.664094], [-100.243292, 25.663906], [-100.242976, 25.663884], [-100.242965, 25.664081], [-100.243282, 25.664094]]]}, "properties": {"Id": "1", "nombre": "Edificio 1", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.243542, 25.664727], [-100.243556, 25.6646], [-100.243171, 25.664574], [-100.243157, 25.664697], [-100.243542, 25.664727]]]}, "properties": {"Id": "3", "nombre": "Edificio 3", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.245433, 25.66518], [-100.245454, 25.66496], [-100.245031, 25.664927], [-100.245002, 25.665153], [-100.245433, 25.66518]]]}, "properties": {"Id": "19", "nombre": "Edificio 19", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.246203, 25.664755], [-100.246224, 25.66454], [-100.245782, 25.664505], [-100.245761, 25.664719], [-100.246203, 25.664755]]]}, "properties": {"Id": "22", "nombre": "Edificio 22", "cat": "admin"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.246008, 25.66517], [-100.246022, 25.664971], [-100.245526, 25.664935], [-100.245505, 25.665135], [-100.246008, 25.66517]]]}, "properties": {"Id": "24", "nombre": "Edificio 24", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.245164, 25.664854], [-100.245178, 25.664715], [-100.244941, 25.664698], [-100.244927, 25.664833], [-100.245164, 25.664854]]]}, "properties": {"Id": "16", "nombre": "Edificio 16", "cat": "lab"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.245196, 25.664449], [-100.244826, 25.664422], [-100.244816, 25.664548], [-100.245184, 25.664574], [-100.245196, 25.664449]]]}, "properties": {"Id": "15", "nombre": "Edificio 15", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.245568, 25.664318], [-100.245586, 25.664096], [-100.245567, 25.664075], [-100.245336, 25.664062], [-100.245307, 25.664081], [-100.245297, 25.664298], [-100.245314, 25.66432], [-100.245541, 25.664336], [-100.245568, 25.664318]]]}, "properties": {"Id": "20", "nombre": "Edificio 20", "cat": "lab"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.245072, 25.664301], [-100.245083, 25.664184], [-100.244725, 25.66416], [-100.244723, 25.664206], [-100.244685, 25.664204], [-100.244676, 25.664268], [-100.245072, 25.664301]]]}, "properties": {"Id": "14", "nombre": "Edificio 14", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.244889, 25.665138], [-100.24491, 25.664916], [-100.244391, 25.664884], [-100.244376, 25.665099], [-100.244889, 25.665138]]]}, "properties": {"Id": "18", "nombre": "Edificio 18", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.244727, 25.664618], [-100.244741, 25.664333], [-100.24444, 25.664316], [-100.244416, 25.664591], [-100.244727, 25.664618]]]}, "properties": {"Id": "11", "nombre": "Edificio 11 / Biblioteca", "cat": "servicios"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.244822, 25.663962], [-100.244839, 25.663788], [-100.244596, 25.663769], [-100.244586, 25.663952], [-100.244822, 25.663962]]]}, "properties": {"Id": "12", "nombre": "Edificio 12 (IoT)", "cat": "lab"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.244043, 25.664515], [-100.243641, 25.664487], [-100.243631, 25.664598], [-100.244028, 25.664628], [-100.244043, 25.664515]]]}, "properties": {"Id": "7", "nombre": "Edificio 7", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.24405, 25.664777], [-100.244063, 25.664674], [-100.243949, 25.664661], [-100.243939, 25.664767], [-100.24405, 25.664777]]]}, "properties": {"Id": "6", "nombre": "Edificio 6", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.244056, 25.664297], [-100.243672, 25.664266], [-100.243664, 25.664386], [-100.244052, 25.664414], [-100.24405, 25.664411], [-100.244056, 25.664297]]]}, "properties": {"Id": "8", "nombre": "Edificio 8", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.244071, 25.664194], [-100.244079, 25.664069], [-100.243689, 25.66405], [-100.243679, 25.664169], [-100.244071, 25.664194]]]}, "properties": {"Id": "9", "nombre": "Edificio 9", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.24422, 25.663872], [-100.244237, 25.663642], [-100.244137, 25.663636], [-100.244119, 25.663867], [-100.24422, 25.663872]]]}, "properties": {"Id": "10", "nombre": "Edificio 10 (Cuervolonch)", "cat": "servicios"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.243019, 25.664874], [-100.243035, 25.664789], [-100.242888, 25.664763], [-100.242871, 25.664848], [-100.243019, 25.664874]]]}, "properties": {"Id": "2", "nombre": "Edificio 2", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.242703, 25.66522], [-100.242726, 25.665084], [-100.242633, 25.665068], [-100.242608, 25.665204], [-100.242703, 25.66522]]]}, "properties": {"Id": "13", "nombre": "Edificio 13", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.242801, 25.664746], [-100.242715, 25.664731], [-100.242637, 25.665064], [-100.242726, 25.665077], [-100.242801, 25.664746]]]}, "properties": {"Id": "4", "nombre": "Edificio 4", "cat": "docencia"}},
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-100.244009, 25.664919], [-100.244019, 25.664801], [-100.243647, 25.664772], [-100.243636, 25.664888], [-100.244009, 25.664919]]]}, "properties": {"Id": "5", "nombre": "Edificio 5", "cat": "docencia"}}
+          ]
+        };
+
+        // Andadores peatonales
+        var andadoresCoords = [
+          [[-100.24358, 25.664587], [-100.243382, 25.664572]],
+          [[-100.245506, 25.665486], [-100.245452, 25.665424], [-100.245462, 25.665259], [-100.245465, 25.665259]],
+          [[-100.245466, 25.665263], [-100.24496, 25.665216]],
+          [[-100.244967, 25.665215], [-100.244971, 25.665178], [-100.244652, 25.665152]],
+          [[-100.244943, 25.665176], [-100.244969, 25.664879]],
+          [[-100.245456, 25.66526], [-100.245493, 25.664915]],
+          [[-100.245501, 25.664918], [-100.24497, 25.664874], [-100.244965, 25.664888]],
+          [[-100.24549, 25.664904], [-100.24576, 25.664925]],
+          [[-100.245502, 25.664917], [-100.245541, 25.664357]],
+          [[-100.245549, 25.664358], [-100.246063, 25.664378], [-100.24605, 25.664504]],
+          [[-100.246058, 25.664505], [-100.246347, 25.664525], [-100.24642, 25.664591], [-100.246475, 25.664577]],
+          [[-100.245548, 25.664361], [-100.245283, 25.664346]],
+          [[-100.245293, 25.664346], [-100.245032, 25.66432]],
+          [[-100.245032, 25.66432], [-100.245023, 25.664435], [-100.24502, 25.664436]],
+          [[-100.245043, 25.664321], [-100.244632, 25.664272]],
+          [[-100.24464, 25.664282], [-100.244102, 25.664229]],
+          [[-100.244609, 25.66431], [-100.244646, 25.663978]],
+          [[-100.244633, 25.664066], [-100.24413, 25.664023]],
+          [[-100.244967, 25.664877], [-100.244916, 25.664871]],
+          [[-100.244919, 25.664874], [-100.244938, 25.664655], [-100.244761, 25.664642], [-100.244794, 25.664298]],
+          [[-100.244917, 25.664875], [-100.244069, 25.664802]],
+          [[-100.244654, 25.66515], [-100.244654, 25.665131], [-100.24436, 25.665104], [-100.244384, 25.664839]],
+          [[-100.244072, 25.664805], [-100.243584, 25.664758]],
+          [[-100.244078, 25.664804], [-100.244083, 25.664699], [-100.244083, 25.664702]],
+          [[-100.244083, 25.664696], [-100.244092, 25.664497]],
+          [[-100.244092, 25.664506], [-100.243597, 25.664468]],
+          [[-100.244083, 25.664499], [-100.244099, 25.664234]],
+          [[-100.244099, 25.664284], [-100.243608, 25.664239]],
+          [[-100.244094, 25.664223], [-100.244111, 25.664026]],
+          [[-100.244121, 25.664026], [-100.244132, 25.663884], [-100.244103, 25.663885], [-100.244114, 25.663758], [-100.244113, 25.663757]],
+          [[-100.244122, 25.663757], [-100.243958, 25.663744], [-100.243961, 25.66375]],
+          [[-100.244122, 25.664035], [-100.243624, 25.663999]],
+          [[-100.243876, 25.663526], [-100.243967, 25.663573], [-100.243951, 25.66375]],
+          [[-100.24395, 25.66377], [-100.243932, 25.664019]],
+          [[-100.243945, 25.663757], [-100.243654, 25.663745]],
+          [[-100.243648, 25.663761], [-100.243629, 25.663992]],
+          [[-100.243624, 25.664003], [-100.243605, 25.664242]],
+          [[-100.243613, 25.664248], [-100.243594, 25.664468]],
+          [[-100.243594, 25.664468], [-100.243584, 25.664589]],
+          [[-100.243583, 25.664601], [-100.243568, 25.664758]],
+          [[-100.243576, 25.664765], [-100.243576, 25.664798], [-100.24341, 25.664788], [-100.243407, 25.664795]],
+          [[-100.243405, 25.664784], [-100.243413, 25.664728]],
+          [[-100.243394, 25.664797], [-100.243393, 25.664841], [-100.243052, 25.664823]],
+          [[-100.243611, 25.66429], [-100.243381, 25.664271], [-100.243362, 25.664572]],
+          [[-100.243353, 25.664559], [-100.243155, 25.664556], [-100.243148, 25.664624], [-100.243065, 25.664615]],
+          [[-100.2436, 25.664254], [-100.243513, 25.664245], [-100.243422, 25.664143], [-100.243153, 25.664122], [-100.243166, 25.664122]],
+          [[-100.243608, 25.663996], [-100.24351, 25.663997], [-100.243422, 25.664143]],
+          [[-100.243388, 25.664281], [-100.243371, 25.664141]],
+          [[-100.243105, 25.664841], [-100.243096, 25.664897], [-100.242815, 25.664878]],
+          [[-100.2428, 25.664882], [-100.242752, 25.665155]],
+          [[-100.243118, 25.664827], [-100.243124, 25.664769], [-100.242845, 25.664733]],
+          [[-100.242843, 25.66474], [-100.242804, 25.664882]],
+          [[-100.24506, 25.664695], [-100.24506, 25.664659], [-100.244943, 25.664656]],
+          [[-100.245307, 25.664351], [-100.24514, 25.664444], [-100.245024, 25.664436]]
+        ];
+
+        
+
+      var map = L.map('map').setView([25.6646, -100.2448], 17);
+
+L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+}).addTo(map);
+
+        andadoresCoords.forEach(function(linea) {
+            var latlngs = linea.map(function(c) { return [c[1], c[0]]; });
+            L.polyline(latlngs, { color: "#6c757d", weight: 3, dashArray: "4, 4", opacity: 0.7 }).addTo(map);
+        });
+
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            var R = 6371000;
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLon = (lon2 - lon1) * Math.PI / 180;
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        var nodos = [], grafo = {};
+        function obtenerOCrearNodo(lat, lng) {
+            for (var i = 0; i < nodos.length; i++) {
+                if (calcularDistancia(lat, lng, nodos[i].lat, nodos[i].lng) < 8) return i;
+            }
+            var id = nodos.length;
+            nodos.push({ lat: lat, lng: lng });
+            grafo[id] = [];
+            return id;
+        }
+
+        andadoresCoords.forEach(function(linea) {
+            for (var i = 0; i < linea.length - 1; i++) {
+                var idA = obtenerOCrearNodo(linea[i][1], linea[i][0]);
+                var idB = obtenerOCrearNodo(linea[i+1][1], linea[i+1][0]);
+                if (idA !== idB) {
+                    var dist = calcularDistancia(nodos[idA].lat, nodos[idA].lng, nodos[idB].lat, nodos[idB].lng);
+                    grafo[idA].push({ nodo: idB, peso: dist });
+                    grafo[idB].push({ nodo: idA, peso: dist });
+                }
+            }
+        });
+
+        function buscarRutaDijkstra(inicioId, finId) {
+            var dist = {}, prev = {}, visitados = new Set(), pq = [];
+            for (var i = 0; i < nodos.length; i++) dist[i] = Infinity;
+            dist[inicioId] = 0;
+            pq.push({ id: inicioId, d: 0 });
+
+            while (pq.length > 0) {
+                pq.sort(function(a, b) { return a.d - b.d; });
+                var u = pq.shift().id;
+                if (u === finId) break;
+                if (visitados.has(u)) continue;
+                visitados.add(u);
+
+                grafo[u].forEach(function(vecino) {
+                    var alt = dist[u] + vecino.peso;
+                    if (alt < dist[vecino.nodo]) {
+                        dist[vecino.nodo] = alt;
+                        prev[vecino.nodo] = u;
+                        pq.push({ id: vecino.nodo, d: alt });
+                    }
+                });
+            }
+
+            var camino = [], curr = finId;
+            while (curr !== undefined) {
+                camino.unshift([nodos[curr].lat, nodos[curr].lng]);
+                curr = prev[curr];
+            }
+            return { camino: camino, distancia: dist[finId] };
+        }
+
+        function nodoMasCercano(lat, lng) {
+            var mejorId = 0, minD = Infinity;
+            for (var i = 0; i < nodos.length; i++) {
+                var d = calcularDistancia(lat, lng, nodos[i].lat, nodos[i].lng);
+                if (d < minD) { minD = d; mejorId = i; }
+            }
+            return mejorId;
+        }
+
+        var puntoOrigen = null, puntoDestino = null, rutaLinea = null, marcadoresMap = {};
+
+        function obtenerColorEdificio(cat) {
+            switch(cat) {
+                case 'docencia': return '#007bff';
+                case 'lab': return '#fd7e14';
+                case 'admin': return '#6f42c1';
+                case 'servicios': return '#28a745';
+                default: return '#17a2b8';
+            }
+        }
+
+        L.geoJSON(campusGeoJSON, {
+            style: function(feature) {
+                var colorCat = obtenerColorEdificio(feature.properties.cat);
+                return { color: "#333333", weight: 1.5, fillColor: colorCat, fillOpacity: 1.0 };
+            },
+            onEachFeature: function(feature, layer) {
+                var props = feature.properties;
+                var idEdificio = props.Id;
+                var nombreCompleto = props.nombre;
+                var center = layer.getBounds().getCenter();
+
+                layer.bindTooltip(idEdificio, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'label-edificio'
+                });
+
+                var popupContent = `
+                    <div style="text-align:center; min-width:170px;">
+                        <h3 style="margin:0 0 4px 0; font-size:1.0em;">${nombreCompleto}</h3>
+                        <p style="margin:0 0 8px 0; color:#555; font-size:0.85em;">ITNL Campus</p>
+                        <div style="display:flex; gap:5px; justify-content:center;">
+                            <button onclick="setOrigen(${center.lat}, ${center.lng}, '${nombreCompleto}')" 
+                                    style="background:#007bff; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:0.8em;">
+                                📍 Salir de aquí
+                            </button>
+                            <button onclick="setDestino(${center.lat}, ${center.lng}, '${nombreCompleto}')" 
+                                    style="background:#28a745; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:0.8em;">
+                                🏁 Ir aquí
+                            </button>
+                        </div>
+                    </div>`;
+                layer.bindPopup(popupContent);
+                marcadoresMap[nombreCompleto] = { layer: layer, latlng: center };
+            }
+        }).addTo(map);
+
+        window.setOrigen = function(lat, lng, nombre) {
+            puntoOrigen = { lat: lat, lng: lng, nombre: nombre };
+            alert("Origen seleccionado: " + nombre + "\n\nAhora selecciona el destino y presiona '🏁 Ir aquí'.");
+            if (puntoDestino) calcularRutaInterna();
+        };
+
+        window.setDestino = function(lat, lng, nombre) {
+            puntoDestino = { lat: lat, lng: lng, nombre: nombre };
+            if (!puntoOrigen) {
+                alert("Destino seleccionado: " + nombre + "\n\nPor favor, selecciona primero el origen con '📍 Salir de aquí'.");
+            } else {
+                calcularRutaInterna();
+            }
+        };
+
+        var navControl = L.control({ position: 'topleft' });
+        navControl.onAdd = function () {
+            var div = L.DomUtil.create('div', 'nav-panel');
+            div.id = 'panelInstrucciones';
+            div.innerHTML = `<b>🧭 Asistente NaviCampus</b><br><span style="color:#666;">Selecciona origen y destino para iniciar la guía paso a paso.</span>`;
+            return div;
+        };
+        navControl.addTo(map);
+
+        function calcularRutaInterna() {
+            if (!puntoOrigen || !puntoDestino) return;
+            if (rutaLinea) map.removeLayer(rutaLinea);
+
+            var idInicio = nodoMasCercano(puntoOrigen.lat, puntoOrigen.lng);
+            var idFin = nodoMasCercano(puntoDestino.lat, puntoDestino.lng);
+            var resultado = buscarRutaDijkstra(idInicio, idFin);
+
+            var latlngs = [[puntoOrigen.lat, puntoOrigen.lng]]
+                .concat(resultado.camino)
+                .concat([[puntoDestino.lat, puntoDestino.lng]]);
+
+            rutaLinea = L.polyline(latlngs, {
+                color: '#28a745',
+                weight: 6,
+                opacity: 0.9,
+                dashArray: '8, 8'
+            }).addTo(map);
+
+            var metros = Math.round(resultado.distancia);
+            var minutos = Math.ceil(metros / 70);
+            map.fitBounds(rutaLinea.getBounds(), { padding: [50, 50] });
+
+            var panel = document.getElementById('panelInstrucciones');
+            if (panel) {
+                panel.innerHTML = `
+                    <b>🚶 Guía de Navegación ITNL</b><br>
+                    <b>Origen:</b> ${puntoOrigen.nombre}<br>
+                    <b>Destino:</b> ${puntoDestino.nombre}<br>
+                    <hr style="margin:5px 0; border:0; border-top:1px solid #ddd;">
+                    <b>Paso 1:</b> Dirígete hacia el andador desde <b>${puntoOrigen.nombre}</b>.<br>
+                    <b>Paso 2:</b> Sigue el trayecto marcado en la línea verde sobre los pasillos.<br>
+                    <b>Paso 3:</b> Llegada estimada a <b>${puntoDestino.nombre}</b>.<br>
+                    <span style="color:#28a745; font-weight:bold; display:block; margin-top:4px;">📏 Distancia: ~${metros}m (${minutos} min a pie)</span>
+                `;
+            }
+        }
+
+        var searchControl = L.control({ position: 'topright' });
+        searchControl.onAdd = function () {
+            var div = L.DomUtil.create('div', 'search-box');
+            var options = Object.keys(marcadoresMap).sort().map(function(n) {
+                return `<option value="${n}">${n}</option>`;
+            }).join('');
+            div.innerHTML = `
+                <div style="background: white; padding: 8px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                    <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px;">🔍 Buscar Edificio:</label>
+                    <select id="selectEdificio" onchange="seleccionarEdificioBuscador(this.value)" style="padding: 4px; font-size: 12px; border-radius: 4px;">
+                        <option value="">-- Selecciona un edificio --</option>
+                        ${options}
+                    </select>
+                </div>`;
+            return div;
+        };
+        searchControl.addTo(map);
+
+        window.seleccionarEdificioBuscador = function(nombreEdificio) {
+            if (!nombreEdificio) return;
+            var item = marcadoresMap[nombreEdificio];
+            if (item) {
+                map.setView(item.latlng, 19);
+                item.layer.openPopup();
+            }
+        }
+    </script>
+</body>
+</html>
